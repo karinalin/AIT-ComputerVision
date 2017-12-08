@@ -219,9 +219,26 @@ svdTest(std::vector<double> svdTestInput)
         decomposeMatrix[i + i + b][a] = submatrix[b][a];
       }
     }
+    printf("sub matrix: \n[%f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f]\n", submatrix[1][1], submatrix[1][2], submatrix[1][3], submatrix[1][4], submatrix[1][5], submatrix[1][6], submatrix[1][7], submatrix[1][8], submatrix[1][9],  submatrix[2][1], submatrix[2][2], submatrix[2][3], submatrix[2][4], submatrix[2][5], submatrix[2][6], submatrix[2][7], submatrix[2][8], submatrix[2][9]);
+
   }
 
+    printf("decomposed matrix: \n[%f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f \n %f %f %f %f %f %f %f %f %f]\n", 
+        decomposeMatrix[1][1], decomposeMatrix[1][2], decomposeMatrix[1][3], decomposeMatrix[1][4], decomposeMatrix[1][5], decomposeMatrix[1][6], decomposeMatrix[1][7], decomposeMatrix[1][8], decomposeMatrix[1][9],  
+        decomposeMatrix[2][1], decomposeMatrix[2][2], decomposeMatrix[2][3], decomposeMatrix[2][4], decomposeMatrix[2][5], decomposeMatrix[2][6], decomposeMatrix[2][7], decomposeMatrix[2][8], decomposeMatrix[2][9],
+
+        decomposeMatrix[3][1], decomposeMatrix[3][2], decomposeMatrix[3][3], decomposeMatrix[3][4], decomposeMatrix[3][5], decomposeMatrix[3][6], decomposeMatrix[3][7], decomposeMatrix[3][8], decomposeMatrix[3][9],  
+        decomposeMatrix[4][1], decomposeMatrix[4][2], decomposeMatrix[4][3], decomposeMatrix[4][4], decomposeMatrix[4][5], decomposeMatrix[4][6], decomposeMatrix[4][7], decomposeMatrix[4][8], decomposeMatrix[4][9],
+        
+        decomposeMatrix[5][1], decomposeMatrix[5][2], decomposeMatrix[5][3], decomposeMatrix[5][4], decomposeMatrix[5][5], decomposeMatrix[5][6], decomposeMatrix[5][7], decomposeMatrix[5][8], decomposeMatrix[5][9],  
+        decomposeMatrix[6][1], decomposeMatrix[6][2], decomposeMatrix[6][3], decomposeMatrix[6][4], decomposeMatrix[6][5], decomposeMatrix[6][6], decomposeMatrix[6][7], decomposeMatrix[6][8], decomposeMatrix[6][9],
+        
+        decomposeMatrix[7][1], decomposeMatrix[7][2], decomposeMatrix[7][3], decomposeMatrix[7][4], decomposeMatrix[7][5], decomposeMatrix[7][6], decomposeMatrix[7][7], decomposeMatrix[7][8], decomposeMatrix[7][9],  
+        decomposeMatrix[8][1], decomposeMatrix[8][2], decomposeMatrix[8][3], decomposeMatrix[8][4], decomposeMatrix[8][5], decomposeMatrix[8][6], decomposeMatrix[8][7], decomposeMatrix[8][8], decomposeMatrix[8][9]);
+
+
   printf("\n PROBLEM 1:\n");
+
 
   // Compute the SVD
   double singularValues[10];
@@ -259,7 +276,7 @@ svdTest(std::vector<double> svdTestInput)
   hMatrix[3][3] = (-1)* nullspaceMatrix[9][smallestIndex];
 
   //Print final solution for H matrix
-  //printf("H matrix: \n[%f %f %f\n %f %f %f\n %f %f %f]\n", hMatrix[1][1], hMatrix[1][2], hMatrix[1][3], hMatrix[2][1], hMatrix[2][2], hMatrix[2][3], hMatrix[3][1], hMatrix[3][2], hMatrix[3][3]);
+  printf("H matrix: \n[%f %f %f\n %f %f %f\n %f %f %f]\n", hMatrix[1][1], hMatrix[1][2], hMatrix[1][3], hMatrix[2][1], hMatrix[2][2], hMatrix[2][3], hMatrix[3][1], hMatrix[3][2], hMatrix[3][3]);
 
   return hMatrix;
 }
@@ -1181,10 +1198,10 @@ for (int p=(-width/25); p<width/25; p++) { //p defines window regardless of rela
       //**********tempImage2.line(currX,lowestX,currY,lowestY, 1.0, 0.0, 0.0);
 
     }
-int iterations = 1000;
+int iterations = 1;
 int maxMatches = 0;
 int currentMatches = 0;
-int threshhold = 16;
+int threshhold = 20;
 double** bestHMatrix = dmatrix(1,3,1,3);
 double** perfHMatrix = dmatrix(1,3,1,3);
 std::vector<double> goodFeatures;
@@ -1192,7 +1209,7 @@ srand(time(NULL));
 
 for (int iteration = 0; iteration<iterations; iteration++) {
 
-  currentMatches = 0;
+    currentMatches = 0;
 
     int f1Index = rand()%(numFeaturesToCheck);
     int f2Index = rand()%(numFeaturesToCheck);
@@ -1206,7 +1223,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     double x2 = tempFeature.endX;
     double y2 = tempFeature.endY;
 
-    //fprintf(stderr, "FEATURE 1: Index = %d \n x1 = %f y1 = %f \n x2 = %f y2 = %f \n",f1Index, x1, y1, x2, y2);
+    fprintf(stderr, "FEATURE 1: Index = %d \n x1 = %f y1 = %f \n x2 = %f y2 = %f \n",f1Index, x1, y1, x2, y2);
 
     tempFeature = featuresToCheck[f2Index];
 
@@ -1215,8 +1232,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     double x4 = tempFeature.endX;
     double y4 = tempFeature.endY;
 
-    //fprintf(stderr, "FEATURE 2: Index = %d \n x3 = %f y3 = %f \n x4 = %f y4 = %f \n",f2Index, x3, y3, x4, y4);
-
+    fprintf(stderr, "FEATURE 2: Index = %d \n x3 = %f y3 = %f \n x4 = %f y4 = %f \n",f2Index, x3, y3, x4, y4);
 
     tempFeature = featuresToCheck[f3Index];
 
@@ -1225,7 +1241,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     double x6 = tempFeature.endX;
     double y6 = tempFeature.endY;
 
-    //fprintf(stderr, "FEATURE 3: Index = %d \n x5 = %f y5 = %f \n x6 = %f y6 = %f \n",f3Index, x5, y5, x6, y6);
+    fprintf(stderr, "FEATURE 3: Index = %d \n x5 = %f y5 = %f \n x6 = %f y6 = %f \n",f3Index, x5, y5, x6, y6);
 
     tempFeature = featuresToCheck[f4Index];
 
@@ -1234,7 +1250,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     double x8 = tempFeature.endX;
     double y8 = tempFeature.endY;
 
-    //fprintf(stderr, "FEATURE 4: Index = %d \n x7 = %f y7 = %f \n x8 = %f y8 = %f \n",f4Index, x7, y7, x8, y8);
+    fprintf(stderr, "FEATURE 4: Index = %d \n x7 = %f y7 = %f \n x8 = %f y8 = %f \n",f4Index, x7, y7, x8, y8);
 
     std::vector<double> input;
 
@@ -1260,9 +1276,8 @@ for (int iteration = 0; iteration<iterations; iteration++) {
 
     // printf("CURRENT H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", hMatrix[1][1], hMatrix[1][2], hMatrix[1][3], hMatrix[2][1], hMatrix[2][2], hMatrix[2][3], hMatrix[3][1], hMatrix[3][2], hMatrix[3][3]);
 
-
     for (int i=0; i<numFeaturesToCheck; i++) {
-      if (i!=f1Index && i!=f2Index && i!=f3Index && i!=f4Index) {
+      //if (i!=f1Index && i!=f2Index && i!=f3Index && i!=f4Index) {
 
         double originVecEndX = featuresToCheck[i].endX;
         double originVecEndY = featuresToCheck[i].endY;
@@ -1279,15 +1294,17 @@ for (int iteration = 0; iteration<iterations; iteration++) {
         // fprintf(stderr, "expectedVecEndY = ((%f)*(%f) + (%f)*(%f) + (%f))/%f = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ,expectedVecEndY);
 
         double temp = distance(originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY);
-        fprintf(stderr, "distance(%f, %f, %f, %f) = %f\n",originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY, temp);
 
+        if (i==f1Index || i == f2Index || i == f3Index || i == f4Index) {
+        fprintf(stderr, "distance(%f, %f, %f, %f) = %f\n",originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY, temp);
+        }
         //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
 
         if (temp <= threshhold) {
-          //fprintf(stderr, "if\n" );
+          fprintf(stderr, "within Threshold\n" );
           currentMatches ++;
         }
-      }
+     // }
     }
 
 //fprintf(stderr, "currentMatches = %d\n", currentMatches);
@@ -1330,6 +1347,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
 
     if (temp <= threshhold) {
+     // fprintf(stderr, "withinThreshold\n");
       goodFeatures.push_back(originVecCenterX);
       goodFeatures.push_back(originVecCenterY);
       goodFeatures.push_back(originVecEndX);
@@ -1354,8 +1372,6 @@ for (int iteration = 0; iteration<iterations; iteration++) {
   //printf("PERF H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", perfHMatrix[1][1], perfHMatrix[1][2], perfHMatrix[1][3], perfHMatrix[2][1], perfHMatrix[2][2], perfHMatrix[2][3], perfHMatrix[3][1], perfHMatrix[3][2], perfHMatrix[3][3]);
       //std::vector<double> goodFeatures;
 
-      
-
       for (int i=0; i<numFeaturesToCheck; i++) {
        // tempFeatureList.clear();
       //deleteIndexList.clear();
@@ -1375,6 +1391,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
     //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
 
       if (temp <= threshhold) {
+       // fprintf(stderr, "withinThreshold\n");
 
         // markedFeatures[i][4] = 1;
 
@@ -1384,7 +1401,7 @@ for (int iteration = 0; iteration<iterations; iteration++) {
 
       }
       else {
-        fprintf(stderr, "else\n" );
+       // fprintf(stderr, "else\n" );
         // markedFeatures[i][4] = 0;
         tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 1.0, 0.0, 0.0);
         //Add bad feature index to delete index list
@@ -1398,8 +1415,8 @@ for (int iteration = 0; iteration<iterations; iteration++) {
   //Delete bad features from featuresToCheck list
   int idx;
   int deleteIndexListSize = static_cast<int>(deleteIndexList.size());
-  fprintf(stderr, "size of featuresToCheck: %d\n", numFeaturesToCheck);
-  fprintf(stderr, "size of deleteIndexList: %d\n" ,deleteIndexListSize);
+  //fprintf(stderr, "size of featuresToCheck: %d\n", numFeaturesToCheck);
+  //fprintf(stderr, "size of deleteIndexList: %d\n" ,deleteIndexListSize-1);
 
   for(int i=deleteIndexListSize-1; i > 0; i--) {
       
