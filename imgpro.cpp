@@ -144,8 +144,8 @@ main(int argc, char **argv)
   else if (!strcmp(argv[i], "-video")) {
     printf("Video processing started\n");
 
-    char inputName[100] = "../videoinput/input%07d.jpg";
-    char outputName[100] = "../videooutput2/output%07d.jpg";
+    char inputName[100] = "../videoinputTest/input%07d.jpg";
+    char outputName[100] = "../videooutputTest/output%07d.jpg";
 
     R2Image *mainImage = new R2Image();
     char currentFilename[100];
@@ -165,10 +165,11 @@ main(int argc, char **argv)
     // =============== VIDEO PROCESSING ===============
 
     //mainImage>Blur(3.0f);
-    mainImage->firstFrameProcessing();
+    int end = 5;
+   mainImage->firstFrameProcessing();
     
-    int end = 88;
-    for (int i = 1; i < end; i++)
+    
+    for (int i = 1; i < end-1; i++)
     {
       R2Image *currentImage = new R2Image();
       if (!currentImage) {
@@ -212,6 +213,54 @@ main(int argc, char **argv)
       delete currentImage;
       delete nextImage;
     }
+
+    double** stabilizationMatrix = mainImage->computeStabilizationMatrix();
+
+    for (int i = 1; i < end-1; i++)
+    {
+      R2Image *currentImage = new R2Image();
+      if (!currentImage) {
+        fprintf(stderr, "Unable to allocate image %d\n",i);
+        exit(-1);
+      }
+
+      R2Image *nextImage = new R2Image();
+      if (!nextImage) {
+        fprintf(stderr, "Unable to allocate nextImage %d\n",i+1);
+        exit(-1);
+      }
+
+      sprintf(currentFilename, inputName, i);
+      sprintf(nextFilename, inputName, i+1);
+      sprintf(currentOutputFilename, outputName, i);
+      
+      printf("Processing file %s\n", currentFilename);
+      if (!currentImage->Read(currentFilename)) {
+        fprintf(stderr, "Unable to read image %d\n", i);
+        exit(-1);
+      }
+
+      if (!nextImage->Read(nextFilename)) {
+        fprintf(stderr, "Unable to read image %d\n", i+1);
+        exit(-1);
+      }
+
+      //currentImage->Brighten((float)i/(float)end);
+      // here you could call 
+      // 
+      currentImage->stabilization( nextImage , stabilizationMatrix); 
+      //
+      // where FrameProcessing would process the current input currentImage, as well as writing the output to currentImage
+
+      // write result to file
+      if (!currentImage->Write(currentOutputFilename)) {
+        fprintf(stderr, "Unable to write %s\n", currentOutputFilename);
+        exit(-1);
+      }
+      delete currentImage;
+      delete nextImage;
+    }
+
     delete mainImage;
     // Return success
     return EXIT_SUCCESS;

@@ -89,6 +89,8 @@ class R2Image {
   double distance(int x1, int x2, int y1, int y2);
   void firstFrameProcessing();
   void frameProcessing(R2Image * otherImage);
+  void stabilization(R2Image * otherImage, double** computeStabilizationMatrix);
+  double** computeStabilizationMatrix();
 
   // File reading/writing
   int Read(const char *filename);

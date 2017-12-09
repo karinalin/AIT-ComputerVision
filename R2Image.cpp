@@ -638,7 +638,7 @@ Harris(double sigma)
     farEnough[i] = false;
   }
 
-  int featuresToMark = 250;
+  int featuresToMark = 200;
   int featuresMarked = 0;
   int index = 0;
   int buffer = 50;
@@ -1087,6 +1087,8 @@ blendOtherImageHomography(R2Image * otherImage)
 }
 
 R2Image* copyImage;
+double averageDeltaX;
+double averageDeltaY;
 
 void R2Image::
   firstFrameProcessing() {
@@ -1095,15 +1097,20 @@ void R2Image::
 
     this->Harris(3);
 
+    averageDeltaY = 0;
+    averageDeltaX = 0;
+
     //Create copy of topFeatureVec as featuresToCheck
-    int featuresMarked = 250;
-    numFeaturesToCheck = 250;
+    int featuresMarked = 200;
+    numFeaturesToCheck = 200;
     for(int i = 0; i < featuresMarked; i++){
       featuresToCheck.push_back(topFeatureVec[i]);
     }
 
     return;
 }
+
+
 
 void R2Image::
   frameProcessing(R2Image* otherImage) {
@@ -1121,7 +1128,7 @@ void R2Image::
   R2Pixel* currentPixelSSD = new R2Pixel(0,0,0,1);
 
   //int featuresMarked = 250;
-  int boxSideLen = 8;
+  int boxSideLen = 7;
 
 // fprintf(stderr, "frameProcessing\n" );
 
@@ -1138,9 +1145,9 @@ void R2Image::
 
     //fprintf(stderr,"accessed topFeatureVec: currX: %d currY: %d\n", currX, currY);
 
-for (int p=(-width/25); p<width/25; p++) { //p defines window regardless of relative location
+    for (int p=(-width/35); p<width/35; p++) { //p defines window regardless of relative location
 
-      for (int q=(-height/25); q<height/25; q++) {
+      for (int q=(-height/35); q<height/35; q++) {
      
     // for (int p=(-width/25+(boxSideLen/2)); p<width/25-(boxSideLen/2); p++) { //p defines window regardless of relative location
 
@@ -1186,8 +1193,8 @@ for (int p=(-width/25); p<width/25; p++) { //p defines window regardless of rela
             lowestX = currX+p;
             lowestY = currY+q;
           }
-        }
       }
+    }
       
 
       //fprintf(stderr, "currX: %d currY %d lowestX: %d, lowestY: %d", currX, currY, lowestX, lowestY);
@@ -1197,220 +1204,92 @@ for (int p=(-width/25); p<width/25; p++) { //p defines window regardless of rela
 
       //**********tempImage2.line(currX,lowestX,currY,lowestY, 1.0, 0.0, 0.0);
 
-    }
-int iterations = 1;
-int maxMatches = 0;
-int currentMatches = 0;
-int threshhold = 20;
-double** bestHMatrix = dmatrix(1,3,1,3);
-double** perfHMatrix = dmatrix(1,3,1,3);
-std::vector<double> goodFeatures;
-srand(time(NULL));
+  }
 
-for (int iteration = 0; iteration<iterations; iteration++) {
+  //BEGIN SIMPLIFIED RANSAC WITH 1 RANDOM FEATURE (10 ITERATIONS)
+  int maxSize = 0;
+  int maxIndex;
+  int currentSize;
+  double threshhold = 8;
+  for (int i=0; i<8; i++) {
 
-    currentMatches = 0;
+    currentSize = 0;
+    int randomNum = rand()%numFeaturesToCheck;
+    int matchVecX1 = featuresToCheck[randomNum].centerX; // 5
+    int matchVecY1 = featuresToCheck[randomNum].centerY; // 1
+    int matchVecX2 = featuresToCheck[randomNum].endX; // 8
+    int matchVecY2 = featuresToCheck[randomNum].endY; // 2
 
-    int f1Index = rand()%(numFeaturesToCheck);
-    int f2Index = rand()%(numFeaturesToCheck);
-    int f3Index = rand()%(numFeaturesToCheck);
-    int f4Index = rand()%(numFeaturesToCheck);
+    for (int j=0; j<numFeaturesToCheck; j++) {
 
-    Feature tempFeature = featuresToCheck[f1Index];
+        int compareVecX1 = featuresToCheck[j].centerX; // 1
+        int compareVecY1 = featuresToCheck[j].centerY; // 1
+        int compareVecX2 = featuresToCheck[j].endX; // 3
+        int compareVecY2 = featuresToCheck[j].endY; // 2
 
-    double x1 = tempFeature.centerX;
-    double y1 = tempFeature.centerY;
-    double x2 = tempFeature.endX;
-    double y2 = tempFeature.endY;
+        int offsetX = compareVecX1-matchVecX1; //1-5 = -4
+        int offsetY = compareVecY1-matchVecY1; // 1-1 = 0
 
-    fprintf(stderr, "FEATURE 1: Index = %d \n x1 = %f y1 = %f \n x2 = %f y2 = %f \n",f1Index, x1, y1, x2, y2);
 
-    tempFeature = featuresToCheck[f2Index];
-
-    double x3 = tempFeature.centerX;
-    double y3 = tempFeature.centerY;
-    double x4 = tempFeature.endX;
-    double y4 = tempFeature.endY;
-
-    fprintf(stderr, "FEATURE 2: Index = %d \n x3 = %f y3 = %f \n x4 = %f y4 = %f \n",f2Index, x3, y3, x4, y4);
-
-    tempFeature = featuresToCheck[f3Index];
-
-    double x5 = tempFeature.centerX;
-    double y5 = tempFeature.centerY;
-    double x6 = tempFeature.endX;
-    double y6 = tempFeature.endY;
-
-    fprintf(stderr, "FEATURE 3: Index = %d \n x5 = %f y5 = %f \n x6 = %f y6 = %f \n",f3Index, x5, y5, x6, y6);
-
-    tempFeature = featuresToCheck[f4Index];
-
-    double x7 = tempFeature.centerX;
-    double y7 = tempFeature.centerY;
-    double x8 = tempFeature.endX;
-    double y8 = tempFeature.endY;
-
-    fprintf(stderr, "FEATURE 4: Index = %d \n x7 = %f y7 = %f \n x8 = %f y8 = %f \n",f4Index, x7, y7, x8, y8);
-
-    std::vector<double> input;
-
-    input.push_back(x1);
-    input.push_back(y1);
-    input.push_back(x2);
-    input.push_back(y2);
-    input.push_back(x3);
-    input.push_back(y3);
-    input.push_back(x4);
-    input.push_back(y4);
-    input.push_back(x5);
-    input.push_back(y5);
-    input.push_back(x6);
-    input.push_back(y6);
-    input.push_back(x7);
-    input.push_back(y7);
-    input.push_back(x8);
-    input.push_back(y8);
-
-    //fprintf(stderr, "input Size: %lu\n", input.size());
-    double** hMatrix = svdTest(input);
-
-    // printf("CURRENT H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", hMatrix[1][1], hMatrix[1][2], hMatrix[1][3], hMatrix[2][1], hMatrix[2][2], hMatrix[2][3], hMatrix[3][1], hMatrix[3][2], hMatrix[3][3]);
-
-    for (int i=0; i<numFeaturesToCheck; i++) {
-      //if (i!=f1Index && i!=f2Index && i!=f3Index && i!=f4Index) {
-
-        double originVecEndX = featuresToCheck[i].endX;
-        double originVecEndY = featuresToCheck[i].endY;
-        double originVecCenterX = featuresToCheck[i].centerX;
-        double originVecCenterY = featuresToCheck[i].centerY;
-
-        double expectedVecEndZ = ((originVecCenterX)*(hMatrix[3][1])) + ((originVecCenterY)*(hMatrix[3][2])) + (hMatrix[3][3]);
-
-        double expectedVecEndX = ((originVecCenterX)*(hMatrix[1][1]) + (originVecCenterY)*(hMatrix[1][2]) + (hMatrix[1][3]))/expectedVecEndZ;
-        double expectedVecEndY = ((originVecCenterX)*(hMatrix[2][1]) + (originVecCenterY)*(hMatrix[2][2]) + (hMatrix[2][3]))/expectedVecEndZ;
-
-        // fprintf(stderr, "expectedVecEndZ = (%f)*(%f) + (%f)*(%f) + (%f) = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ);
-        // fprintf(stderr, "expectedVecEndX = ((%f)*(%f) + (%f)*(%f) + (%f))/%f = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ,expectedVecEndX);
-        // fprintf(stderr, "expectedVecEndY = ((%f)*(%f) + (%f)*(%f) + (%f))/%f = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ,expectedVecEndY);
-
-        double temp = distance(originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY);
-
-        if (i==f1Index || i == f2Index || i == f3Index || i == f4Index) {
-        fprintf(stderr, "distance(%f, %f, %f, %f) = %f\n",originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY, temp);
-        }
-        //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
+        double temp = distance(compareVecX2, matchVecX2+offsetX, compareVecY2, matchVecY2+offsetY);
 
         if (temp <= threshhold) {
-          fprintf(stderr, "within Threshold\n" );
-          currentMatches ++;
-        }
-     // }
-    }
 
-//fprintf(stderr, "currentMatches = %d\n", currentMatches);
-    if (currentMatches > maxMatches) {
-
-      maxMatches = currentMatches;
-
-      for (int q=1; q<4; q++) {
-        for (int p=1; p<4; p++) {
-          bestHMatrix[p][q] = hMatrix[p][q];
+          currentSize ++;
         }
       }
-    }
+    if (currentSize > maxSize) {
+        maxSize = currentSize;
+        maxIndex = randomNum;
+      }    
   }
 
-  R2Image tempImage2(*this);
+  //DO RANSAC AGAIN WITH BEST MATCH VECTOR
 
-  //printf("BEST H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", bestHMatrix[1][1], bestHMatrix[1][2], bestHMatrix[1][3], bestHMatrix[2][1], bestHMatrix[2][2], bestHMatrix[2][3], bestHMatrix[3][1], bestHMatrix[3][2], bestHMatrix[3][3]);
+  int matchVecX1 = featuresToCheck[maxIndex].centerX; // 5
+  int matchVecY1 = featuresToCheck[maxIndex].centerY; // 1
+  int matchVecX2 = featuresToCheck[maxIndex].endX; // 8
+  int matchVecY2 = featuresToCheck[maxIndex].endY; // 2
 
-  for (int i=0; i<250; i++) {
+  std::vector<double> deleteIndexList;
+  double avgDeltaXFrame = 0;
+  double avgDeltaYFrame = 0;
 
-    double originVecEndX = featuresToCheck[i].endX;
-    double originVecEndY = featuresToCheck[i].endY;
-    double originVecCenterX = featuresToCheck[i].centerX;
-    double originVecCenterY = featuresToCheck[i].centerY;
+  int inliers = 0;
+  for (int i=0; i<numFeaturesToCheck; i++) {
+    // tempFeatureList.clear();
+    //deleteIndexList.clear();
+    int compareVecX1 = featuresToCheck[i].centerX; // 1
+    int compareVecY1 = featuresToCheck[i].centerY; // 1
+    int compareVecX2 = featuresToCheck[i].endX; // 3
+    int compareVecY2 = featuresToCheck[i].endY; // 2
 
-    // markedFeatures[i][0] = originVecCenterX;
-    // markedFeatures[i][1] = originVecCenterY;
-    // markedFeatures[i][2] = originVecEndX;
-    // markedFeatures[i][3] = originVecEndY;
+    int offsetX = compareVecX1-matchVecX1; //1-5 = -4
+    int offsetY = compareVecY1-matchVecY1; // 1-1 = 0
 
-    double expectedVecEndZ = ((originVecCenterX)*(bestHMatrix[3][1])) + ((originVecCenterY)*(bestHMatrix[3][2])) + (bestHMatrix[3][3]);
-
-    double expectedVecEndX = (((originVecCenterX)*(bestHMatrix[1][1])) + ((originVecCenterY)*(bestHMatrix[1][2])) + (bestHMatrix[1][3]))/expectedVecEndZ;
-    double expectedVecEndY = (((originVecCenterX)*(bestHMatrix[2][1])) + ((originVecCenterY)*(bestHMatrix[2][2])) + (bestHMatrix[2][3]))/expectedVecEndZ;
-
-    double temp = distance(originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY);
-
-
-    //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
+    double temp = distance(compareVecX2, matchVecX2+offsetX, compareVecY2, matchVecY2+offsetY);
 
     if (temp <= threshhold) {
-     // fprintf(stderr, "withinThreshold\n");
-      goodFeatures.push_back(originVecCenterX);
-      goodFeatures.push_back(originVecCenterY);
-      goodFeatures.push_back(originVecEndX);
-      goodFeatures.push_back(originVecEndY);
-
-      // markedFeatures[i][4] = 1;
-
-      //tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 0.0, 1.0, 0.0);
-
-      //tempImage2.line(originVecCenterX, expectedVecEndX, originVecCenterY, expectedVecEndY, 0.541176,0.168627, 0.886275);
-
+      tempImage.line(compareVecX1,compareVecX2,compareVecY1,compareVecY2, 0.0, 1.0, 0.0);
+      avgDeltaXFrame += double(compareVecX2 - compareVecX1);
+      avgDeltaYFrame += double(compareVecY2 - compareVecY1);
+      inliers++;
     }
     else {
-      // markedFeatures[i][4] = 0;
-      //tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 1.0, 0.0, 0.0);
+      tempImage.line(compareVecX1,compareVecX2,compareVecY1,compareVecY2, 1.0, 0.0, 0.0);
+      //Add bad feature index to delete index list
+      deleteIndexList.push_back(i);
     }
+  //Reset feature centers as ends for next frame pair after marking feature
+  featuresToCheck[i].centerX = featuresToCheck[i].endX;
+  featuresToCheck[i].centerY = featuresToCheck[i].endY;
   }
 
-  perfHMatrix = svdTest(goodFeatures);
-  //std::vector<Feature> tempFeatureList;
-  std::vector<double> deleteIndexList;
+  avgDeltaXFrame = avgDeltaXFrame / inliers;
+  avgDeltaYFrame = avgDeltaYFrame / inliers;
+
   //printf("PERF H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", perfHMatrix[1][1], perfHMatrix[1][2], perfHMatrix[1][3], perfHMatrix[2][1], perfHMatrix[2][2], perfHMatrix[2][3], perfHMatrix[3][1], perfHMatrix[3][2], perfHMatrix[3][3]);
       //std::vector<double> goodFeatures;
-
-      for (int i=0; i<numFeaturesToCheck; i++) {
-       // tempFeatureList.clear();
-      //deleteIndexList.clear();
-      double originVecEndX = featuresToCheck[i].endX;
-      double originVecEndY = featuresToCheck[i].endY;
-      double originVecCenterX = featuresToCheck[i].centerX;
-      double originVecCenterY = featuresToCheck[i].centerY;
-  
-      double expectedVecEndZperf = ((originVecCenterX)*(perfHMatrix[3][1])) + ((originVecCenterY)*(perfHMatrix[3][2])) + (perfHMatrix[3][3]);
-
-      double expectedVecEndXperf = (((originVecCenterX)*(perfHMatrix[1][1])) + ((originVecCenterY)*(perfHMatrix[1][2])) + (perfHMatrix[1][3]))/expectedVecEndZperf;
-      double expectedVecEndYperf = (((originVecCenterX)*(perfHMatrix[2][1])) + ((originVecCenterY)*(perfHMatrix[2][2])) + (perfHMatrix[2][3]))/expectedVecEndZperf;
-
-
-      double temp = distance(originVecEndX, expectedVecEndXperf, originVecEndY, expectedVecEndYperf);
-
-    //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
-
-      if (temp <= threshhold) {
-       // fprintf(stderr, "withinThreshold\n");
-
-        // markedFeatures[i][4] = 1;
-
-        tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 0.0, 1.0, 0.0);
-
-        //tempImage2.line(originVecCenterX, expectedVecEndX, originVecCenterY, expectedVecEndY, 0.541176,0.168627, 0.886275);
-
-      }
-      else {
-       // fprintf(stderr, "else\n" );
-        // markedFeatures[i][4] = 0;
-        tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 1.0, 0.0, 0.0);
-        //Add bad feature index to delete index list
-        deleteIndexList.push_back(i);
-    }
-
-    featuresToCheck[i].centerX = featuresToCheck[i].endX;
-    featuresToCheck[i].centerY = featuresToCheck[i].endY;
-  }
     
   //Delete bad features from featuresToCheck list
   int idx;
@@ -1432,13 +1311,403 @@ for (int iteration = 0; iteration<iterations; iteration++) {
 
   deleteIndexList.clear();
 
+  averageDeltaX += avgDeltaXFrame;
+  averageDeltaY += avgDeltaYFrame;
+
 
     for (int p=0; p<width; p++) {
       for (int q=0; q<height; q++) {
-        Pixel(p,q) = tempImage2.Pixel(p,q);
+        Pixel(p,q) = tempImage.Pixel(p,q);
       }
     }
 }
+
+double** R2Image::computeStabilizationMatrix() {
+
+  averageDeltaX /= 88;
+  averageDeltaY /= 88;
+
+  double** result = dmatrix(1,3,1,3);
+
+  result[1][1] = 1;
+  result[1][2] = 0;
+  result[1][3] = averageDeltaX;
+  result[2][1] = 0;
+  result[2][2] = 1;
+  result[2][3] = averageDeltaY;
+  result[3][1] = 0;
+  result[3][2] = 0;
+  result[3][3] = 1;
+
+  return result;
+}
+
+void R2Image::stabilization(R2Image* otherImage, double** stabilizationMatrix) {
+
+
+  R2Image *copyImage = new R2Image(*this);
+    fprintf(stderr, "copy image created\n" );
+
+
+  for (int i=0; i< width; i++) {
+    for (int j=0; j<height; j++) {
+      double expectedEndZ = ((i)*(stabilizationMatrix[3][1])) + ((j)*(stabilizationMatrix[3][2])) + (stabilizationMatrix[3][3]);
+
+      double expectedEndX = (((i)*(stabilizationMatrix[1][1])) + ((j)*(stabilizationMatrix[1][2])) + (stabilizationMatrix[1][3]))/expectedEndZ;
+      double expectedEndY = (((i)*(stabilizationMatrix[2][1])) + ((j)*(stabilizationMatrix[2][2])) + (stabilizationMatrix[2][3]))/expectedEndZ;
+
+      fprintf(stderr, "copyImage->Pixel(%f, %f) = this->Pixel(%d,%d);\n",expectedEndX, expectedEndY, i, j );
+
+      bool validPoint = expectedEndX > 0 && expectedEndY > 0 && expectedEndX < (width-1) && expectedEndY < (height-1);
+      if (validPoint) {
+      copyImage->Pixel(expectedEndX, expectedEndY) = this->Pixel(i,j);
+      }
+    }
+  }
+
+  for (int i=0; i< width; i++) {
+    for (int j=0; j<height; j++) {
+
+      Pixel(i,j) = copyImage->Pixel(i,j);
+    }
+  }
+
+}
+
+// void R2Image::
+//   frameProcessing(R2Image* otherImage) {
+
+//     //numFeaturesToCheck--;
+//     fprintf(stderr, "%d\n", numFeaturesToCheck);
+//     //numFeaturesToCheck= numFeaturesToCheck -1;
+//     //fprintf(stderr, "%d\n", numFeaturesToCheck);
+
+
+//   R2Image tempImage(*this);
+
+//   // fprintf(stderr, "creating currentPixel object\n");
+
+//   R2Pixel* currentPixelSSD = new R2Pixel(0,0,0,1);
+
+//   //int featuresMarked = 250;
+//   int boxSideLen = 8;
+
+// // fprintf(stderr, "frameProcessing\n" );
+
+//   for (int i=0; i<numFeaturesToCheck; i++) {
+
+//     double lowestSum = std::numeric_limits<double>::max();
+//     int lowestX = 0;
+//     int lowestY = 0;
+
+//     int currX = featuresToCheck[i].centerX;
+//     int currY = featuresToCheck[i].centerY;
+
+//     double currentSum;
+
+//     //fprintf(stderr,"accessed topFeatureVec: currX: %d currY: %d\n", currX, currY);
+
+// for (int p=(-width/25); p<width/25; p++) { //p defines window regardless of relative location
+
+//       for (int q=(-height/25); q<height/25; q++) {
+     
+//     // for (int p=(-width/25+(boxSideLen/2)); p<width/25-(boxSideLen/2); p++) { //p defines window regardless of relative location
+
+//     //   for (int q=(-height/25+(boxSideLen/2)); q<height/25-(boxSideLen/2); q++) {
+//     //fprintf(stderr, "within window double for loops\n");
+
+//         bool withinRange = p+currX >= 0 && p+currX < width && q+currY >= 0 && q+currY < height;
+
+//         if (withinRange) {
+
+//           currentSum = 0;
+//           for (int k = -boxSideLen/2; k < boxSideLen/2+1; k++) { //k defines box regardless of relative location
+
+//             for (int j= -boxSideLen/2; j<boxSideLen/2+1; j++) {
+//               //fprintf(stderr, "within box double for loops\n");
+
+//               bool withinRangeAgain = (currX + p + k >= 0) && (currX + p + k < std::min(otherImage->width, width)) && (currY + q + j >= 0) && (currY + q + j < std::min(height, otherImage->height));
+
+//               if (withinRangeAgain) {
+
+//                 //fprintf(stderr, "withinRangeAgain\n");
+
+//                 int u = currX + p + k;
+//                 int v = currY + q + j;
+
+//                 *currentPixelSSD = (Pixel(currX+k,currY+j)-(otherImage->Pixel(u,v)));
+
+
+//                 currentSum += pow(currentPixelSSD->Red(),2);
+//                 currentSum += pow(currentPixelSSD->Green(),2);
+//                 currentSum += pow(currentPixelSSD->Blue(),2);
+
+//               }
+//             }
+//           }
+//         }
+//           if (currentSum < lowestSum) {
+//             //fprintf(stderr, "currentSum: %f, lowestSum: %f\n", currentSum, lowestSum);
+
+//             //fprintf(stderr, "replacing lowestSum lowestX: %d lowestY: %d\n", lowestX, lowestY);
+
+//             lowestSum = currentSum;
+//             lowestX = currX+p;
+//             lowestY = currY+q;
+//           }
+//         }
+//       }
+      
+
+//       //fprintf(stderr, "currX: %d currY %d lowestX: %d, lowestY: %d", currX, currY, lowestX, lowestY);
+      
+//     featuresToCheck[i].endX = lowestX;
+//     featuresToCheck[i].endY = lowestY;
+
+//       //**********tempImage2.line(currX,lowestX,currY,lowestY, 1.0, 0.0, 0.0);
+
+//     }
+// int iterations = 1;
+// int maxMatches = 0;
+// int currentMatches = 0;
+// int threshhold = 20;
+// double** bestHMatrix = dmatrix(1,3,1,3);
+// double** perfHMatrix = dmatrix(1,3,1,3);
+// std::vector<double> goodFeatures;
+// srand(time(NULL));
+
+// for (int iteration = 0; iteration<iterations; iteration++) {
+
+//     currentMatches = 0;
+
+//     int f1Index = rand()%(numFeaturesToCheck);
+//     int f2Index = rand()%(numFeaturesToCheck);
+//     int f3Index = rand()%(numFeaturesToCheck);
+//     int f4Index = rand()%(numFeaturesToCheck);
+
+//     Feature tempFeature = featuresToCheck[f1Index];
+
+//     double x1 = tempFeature.centerX;
+//     double y1 = tempFeature.centerY;
+//     double x2 = tempFeature.endX;
+//     double y2 = tempFeature.endY;
+
+//     fprintf(stderr, "FEATURE 1: Index = %d \n x1 = %f y1 = %f \n x2 = %f y2 = %f \n",f1Index, x1, y1, x2, y2);
+
+//     tempFeature = featuresToCheck[f2Index];
+
+//     double x3 = tempFeature.centerX;
+//     double y3 = tempFeature.centerY;
+//     double x4 = tempFeature.endX;
+//     double y4 = tempFeature.endY;
+
+//     fprintf(stderr, "FEATURE 2: Index = %d \n x3 = %f y3 = %f \n x4 = %f y4 = %f \n",f2Index, x3, y3, x4, y4);
+
+//     tempFeature = featuresToCheck[f3Index];
+
+//     double x5 = tempFeature.centerX;
+//     double y5 = tempFeature.centerY;
+//     double x6 = tempFeature.endX;
+//     double y6 = tempFeature.endY;
+
+//     fprintf(stderr, "FEATURE 3: Index = %d \n x5 = %f y5 = %f \n x6 = %f y6 = %f \n",f3Index, x5, y5, x6, y6);
+
+//     tempFeature = featuresToCheck[f4Index];
+
+//     double x7 = tempFeature.centerX;
+//     double y7 = tempFeature.centerY;
+//     double x8 = tempFeature.endX;
+//     double y8 = tempFeature.endY;
+
+//     fprintf(stderr, "FEATURE 4: Index = %d \n x7 = %f y7 = %f \n x8 = %f y8 = %f \n",f4Index, x7, y7, x8, y8);
+
+//     std::vector<double> input;
+
+//     input.push_back(x1);
+//     input.push_back(y1);
+//     input.push_back(x2);
+//     input.push_back(y2);
+//     input.push_back(x3);
+//     input.push_back(y3);
+//     input.push_back(x4);
+//     input.push_back(y4);
+//     input.push_back(x5);
+//     input.push_back(y5);
+//     input.push_back(x6);
+//     input.push_back(y6);
+//     input.push_back(x7);
+//     input.push_back(y7);
+//     input.push_back(x8);
+//     input.push_back(y8);
+
+//     //fprintf(stderr, "input Size: %lu\n", input.size());
+//     double** hMatrix = svdTest(input);
+
+//     // printf("CURRENT H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", hMatrix[1][1], hMatrix[1][2], hMatrix[1][3], hMatrix[2][1], hMatrix[2][2], hMatrix[2][3], hMatrix[3][1], hMatrix[3][2], hMatrix[3][3]);
+
+//     for (int i=0; i<numFeaturesToCheck; i++) {
+//       //if (i!=f1Index && i!=f2Index && i!=f3Index && i!=f4Index) {
+
+//         double originVecEndX = featuresToCheck[i].endX;
+//         double originVecEndY = featuresToCheck[i].endY;
+//         double originVecCenterX = featuresToCheck[i].centerX;
+//         double originVecCenterY = featuresToCheck[i].centerY;
+
+//         double expectedVecEndZ = ((originVecCenterX)*(hMatrix[3][1])) + ((originVecCenterY)*(hMatrix[3][2])) + (hMatrix[3][3]);
+
+//         double expectedVecEndX = ((originVecCenterX)*(hMatrix[1][1]) + (originVecCenterY)*(hMatrix[1][2]) + (hMatrix[1][3]))/expectedVecEndZ;
+//         double expectedVecEndY = ((originVecCenterX)*(hMatrix[2][1]) + (originVecCenterY)*(hMatrix[2][2]) + (hMatrix[2][3]))/expectedVecEndZ;
+
+//         // fprintf(stderr, "expectedVecEndZ = (%f)*(%f) + (%f)*(%f) + (%f) = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ);
+//         // fprintf(stderr, "expectedVecEndX = ((%f)*(%f) + (%f)*(%f) + (%f))/%f = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ,expectedVecEndX);
+//         // fprintf(stderr, "expectedVecEndY = ((%f)*(%f) + (%f)*(%f) + (%f))/%f = %f\n", originVecCenterX, bestHMatrix[3][1],originVecCenterY, bestHMatrix[3][2], bestHMatrix[3][3], expectedVecEndZ,expectedVecEndY);
+
+//         double temp = distance(originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY);
+
+//         if (i==f1Index || i == f2Index || i == f3Index || i == f4Index) {
+//         fprintf(stderr, "distance(%f, %f, %f, %f) = %f\n",originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY, temp);
+//         }
+//         //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
+
+//         if (temp <= threshhold) {
+//           fprintf(stderr, "within Threshold\n" );
+//           currentMatches ++;
+//         }
+//      // }
+//     }
+
+// //fprintf(stderr, "currentMatches = %d\n", currentMatches);
+//     if (currentMatches > maxMatches) {
+
+//       maxMatches = currentMatches;
+
+//       for (int q=1; q<4; q++) {
+//         for (int p=1; p<4; p++) {
+//           bestHMatrix[p][q] = hMatrix[p][q];
+//         }
+//       }
+//     }
+//   }
+
+//   R2Image tempImage2(*this);
+
+//   //printf("BEST H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", bestHMatrix[1][1], bestHMatrix[1][2], bestHMatrix[1][3], bestHMatrix[2][1], bestHMatrix[2][2], bestHMatrix[2][3], bestHMatrix[3][1], bestHMatrix[3][2], bestHMatrix[3][3]);
+
+//   for (int i=0; i<250; i++) {
+
+//     double originVecEndX = featuresToCheck[i].endX;
+//     double originVecEndY = featuresToCheck[i].endY;
+//     double originVecCenterX = featuresToCheck[i].centerX;
+//     double originVecCenterY = featuresToCheck[i].centerY;
+
+//     // markedFeatures[i][0] = originVecCenterX;
+//     // markedFeatures[i][1] = originVecCenterY;
+//     // markedFeatures[i][2] = originVecEndX;
+//     // markedFeatures[i][3] = originVecEndY;
+
+//     double expectedVecEndZ = ((originVecCenterX)*(bestHMatrix[3][1])) + ((originVecCenterY)*(bestHMatrix[3][2])) + (bestHMatrix[3][3]);
+
+//     double expectedVecEndX = (((originVecCenterX)*(bestHMatrix[1][1])) + ((originVecCenterY)*(bestHMatrix[1][2])) + (bestHMatrix[1][3]))/expectedVecEndZ;
+//     double expectedVecEndY = (((originVecCenterX)*(bestHMatrix[2][1])) + ((originVecCenterY)*(bestHMatrix[2][2])) + (bestHMatrix[2][3]))/expectedVecEndZ;
+
+//     double temp = distance(originVecEndX, expectedVecEndX, originVecEndY, expectedVecEndY);
+
+
+//     //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
+
+//     if (temp <= threshhold) {
+//      // fprintf(stderr, "withinThreshold\n");
+//       goodFeatures.push_back(originVecCenterX);
+//       goodFeatures.push_back(originVecCenterY);
+//       goodFeatures.push_back(originVecEndX);
+//       goodFeatures.push_back(originVecEndY);
+
+//       // markedFeatures[i][4] = 1;
+
+//       //tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 0.0, 1.0, 0.0);
+
+//       //tempImage2.line(originVecCenterX, expectedVecEndX, originVecCenterY, expectedVecEndY, 0.541176,0.168627, 0.886275);
+
+//     }
+//     else {
+//       // markedFeatures[i][4] = 0;
+//       //tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 1.0, 0.0, 0.0);
+//     }
+//   }
+
+//   perfHMatrix = svdTest(goodFeatures);
+//   //std::vector<Feature> tempFeatureList;
+//   std::vector<double> deleteIndexList;
+//   //printf("PERF H matrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", perfHMatrix[1][1], perfHMatrix[1][2], perfHMatrix[1][3], perfHMatrix[2][1], perfHMatrix[2][2], perfHMatrix[2][3], perfHMatrix[3][1], perfHMatrix[3][2], perfHMatrix[3][3]);
+//       //std::vector<double> goodFeatures;
+
+//       for (int i=0; i<numFeaturesToCheck; i++) {
+//        // tempFeatureList.clear();
+//       //deleteIndexList.clear();
+//       double originVecEndX = featuresToCheck[i].endX;
+//       double originVecEndY = featuresToCheck[i].endY;
+//       double originVecCenterX = featuresToCheck[i].centerX;
+//       double originVecCenterY = featuresToCheck[i].centerY;
+  
+//       double expectedVecEndZperf = ((originVecCenterX)*(perfHMatrix[3][1])) + ((originVecCenterY)*(perfHMatrix[3][2])) + (perfHMatrix[3][3]);
+
+//       double expectedVecEndXperf = (((originVecCenterX)*(perfHMatrix[1][1])) + ((originVecCenterY)*(perfHMatrix[1][2])) + (perfHMatrix[1][3]))/expectedVecEndZperf;
+//       double expectedVecEndYperf = (((originVecCenterX)*(perfHMatrix[2][1])) + ((originVecCenterY)*(perfHMatrix[2][2])) + (perfHMatrix[2][3]))/expectedVecEndZperf;
+
+
+//       double temp = distance(originVecEndX, expectedVecEndXperf, originVecEndY, expectedVecEndYperf);
+
+//     //fprintf(stderr, "i = %d; temp = %f\n",i, temp);
+
+//       if (temp <= threshhold) {
+//        // fprintf(stderr, "withinThreshold\n");
+
+//         // markedFeatures[i][4] = 1;
+
+//         tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 0.0, 1.0, 0.0);
+
+//         //tempImage2.line(originVecCenterX, expectedVecEndX, originVecCenterY, expectedVecEndY, 0.541176,0.168627, 0.886275);
+
+//       }
+//       else {
+//        // fprintf(stderr, "else\n" );
+//         // markedFeatures[i][4] = 0;
+//         tempImage2.line(originVecCenterX,originVecEndX,originVecCenterY,originVecEndY, 1.0, 0.0, 0.0);
+//         //Add bad feature index to delete index list
+//         deleteIndexList.push_back(i);
+//     }
+
+//     featuresToCheck[i].centerX = featuresToCheck[i].endX;
+//     featuresToCheck[i].centerY = featuresToCheck[i].endY;
+//   }
+    
+//   //Delete bad features from featuresToCheck list
+//   int idx;
+//   int deleteIndexListSize = static_cast<int>(deleteIndexList.size());
+//   //fprintf(stderr, "size of featuresToCheck: %d\n", numFeaturesToCheck);
+//   //fprintf(stderr, "size of deleteIndexList: %d\n" ,deleteIndexListSize-1);
+
+//   for(int i=deleteIndexListSize-1; i > 0; i--) {
+      
+//       idx = deleteIndexList[i];
+
+//       numFeaturesToCheck = numFeaturesToCheck -1;
+      
+//       for (int j=idx; j<numFeaturesToCheck; j++) {
+//         featuresToCheck[j] = featuresToCheck[j+1];
+
+//       }
+//   }
+
+//   deleteIndexList.clear();
+
+
+//     for (int p=0; p<width; p++) {
+//       for (int q=0; q<height; q++) {
+//         Pixel(p,q) = tempImage2.Pixel(p,q);
+//       }
+//     }
+// }
 
 ////////////////////////////////////////////////////////////////////////
 // I/O Functions
