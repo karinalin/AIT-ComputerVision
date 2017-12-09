@@ -88,9 +88,9 @@ class R2Image {
   void blendOtherImageHomography(R2Image * otherImage);
   double distance(int x1, int x2, int y1, int y2);
   void firstFrameProcessing();
-  void frameProcessing(R2Image * otherImage);
-  void stabilization(R2Image * otherImage, double** computeStabilizationMatrix);
-  double** computeStabilizationMatrix();
+  void frameProcessing(R2Image * otherImage, int frameNum);
+  void stabilization(int frameNum);
+  void gaussianMatricies(int frameNum);
 
   // File reading/writing
   int Read(const char *filename);

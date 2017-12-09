@@ -144,8 +144,8 @@ main(int argc, char **argv)
   else if (!strcmp(argv[i], "-video")) {
     printf("Video processing started\n");
 
-    char inputName[100] = "../videoinputTest/input%07d.jpg";
-    char outputName[100] = "../videooutputTest/output%07d.jpg";
+    char inputName[100] = "../videoinput/input%07d.jpg";
+    char outputName[100] = "../videooutput4/output%07d.jpg";
 
     R2Image *mainImage = new R2Image();
     char currentFilename[100];
@@ -165,10 +165,12 @@ main(int argc, char **argv)
     // =============== VIDEO PROCESSING ===============
 
     //mainImage>Blur(3.0f);
-    int end = 5;
-   mainImage->firstFrameProcessing();
+    int end = 88;
     
+    mainImage->firstFrameProcessing();
     
+    fprintf(stderr, "starting frameProcessing for loop\n");
+
     for (int i = 1; i < end-1; i++)
     {
       R2Image *currentImage = new R2Image();
@@ -198,13 +200,8 @@ main(int argc, char **argv)
         exit(-1);
       }
 
-      //currentImage->Brighten((float)i/(float)end);
-      // here you could call 
-      // 
-      currentImage->frameProcessing( nextImage ); 
-      //
-      // where FrameProcessing would process the current input currentImage, as well as writing the output to currentImage
-
+      currentImage->frameProcessing( nextImage, i-1 ); 
+     
       // write result to file
       if (!currentImage->Write(currentOutputFilename)) {
         fprintf(stderr, "Unable to write %s\n", currentOutputFilename);
@@ -214,7 +211,20 @@ main(int argc, char **argv)
       delete nextImage;
     }
 
-    double** stabilizationMatrix = mainImage->computeStabilizationMatrix();
+
+
+fprintf(stderr, "starting gaussianMatricies for loop\n");
+
+    for (int i = 4; i < end-4; i++){
+      
+        mainImage->gaussianMatricies(i-1 ); 
+    
+    }
+
+
+
+
+fprintf(stderr, "starting stabilization for loop\n");
 
     for (int i = 1; i < end-1; i++)
     {
@@ -248,7 +258,10 @@ main(int argc, char **argv)
       //currentImage->Brighten((float)i/(float)end);
       // here you could call 
       // 
-      currentImage->stabilization( nextImage , stabilizationMatrix); 
+
+      if (i>3 && i<end-4) {
+      currentImage->stabilization(i); 
+    }
       //
       // where FrameProcessing would process the current input currentImage, as well as writing the output to currentImage
 

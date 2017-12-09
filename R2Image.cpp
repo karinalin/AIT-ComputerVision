@@ -1087,8 +1087,8 @@ blendOtherImageHomography(R2Image * otherImage)
 }
 
 R2Image* copyImage;
-double averageDeltaX;
-double averageDeltaY;
+double averageDeltaX[88][2];
+double averageDeltaY[88][2];
 
 void R2Image::
   firstFrameProcessing() {
@@ -1096,9 +1096,6 @@ void R2Image::
     copyImage = new R2Image (*this);
 
     this->Harris(3);
-
-    averageDeltaY = 0;
-    averageDeltaX = 0;
 
     //Create copy of topFeatureVec as featuresToCheck
     int featuresMarked = 200;
@@ -1113,7 +1110,7 @@ void R2Image::
 
 
 void R2Image::
-  frameProcessing(R2Image* otherImage) {
+  frameProcessing(R2Image* otherImage, int frameNum) {
 
     //numFeaturesToCheck--;
     fprintf(stderr, "%d\n", numFeaturesToCheck);
@@ -1256,6 +1253,7 @@ void R2Image::
   double avgDeltaYFrame = 0;
 
   int inliers = 0;
+
   for (int i=0; i<numFeaturesToCheck; i++) {
     // tempFeatureList.clear();
     //deleteIndexList.clear();
@@ -1311,8 +1309,11 @@ void R2Image::
 
   deleteIndexList.clear();
 
-  averageDeltaX += avgDeltaXFrame;
-  averageDeltaY += avgDeltaYFrame;
+  fprintf(stderr, "line 1312: averageDeltaX[%d][0] = %f\n", frameNum, avgDeltaXFrame);
+  fprintf(stderr, "line 1313: averageDeltaY[%d][1] = %f\n", frameNum, avgDeltaYFrame);
+
+  averageDeltaX[frameNum][0] = avgDeltaXFrame;
+  averageDeltaY[frameNum][1] = avgDeltaYFrame;
 
 
     for (int p=0; p<width; p++) {
@@ -1320,43 +1321,61 @@ void R2Image::
         Pixel(p,q) = tempImage.Pixel(p,q);
       }
     }
+
 }
 
-double** R2Image::computeStabilizationMatrix() {
+std::vector<double> gaussianDeltas;
 
-  averageDeltaX /= 88;
-  averageDeltaY /= 88;
+void R2Image::gaussianMatricies(int frameNum) {
+  //double gaussian [7]= {0.106595, 0.140367, 0.165569, 0.174938, 0.165569, 0.140367, 0.106595}; //signma = 3
 
-  double** result = dmatrix(1,3,1,3);
+  double gaussian [7] = {0.135679,  0.142769, 0.147199, 0.148706, 0.147199, 0.142769, 0.135679}; //signma = 7
 
-  result[1][1] = 1;
-  result[1][2] = 0;
-  result[1][3] = averageDeltaX;
-  result[2][1] = 0;
-  result[2][2] = 1;
-  result[2][3] = averageDeltaY;
-  result[3][1] = 0;
-  result[3][2] = 0;
-  result[3][3] = 1;
+  double deltaX = 0;
+  double deltaY = 0;
 
-  return result;
+  for (int i=0; i<7; i++) {
+
+    deltaX += (averageDeltaX[frameNum-3+i][0] * gaussian[i]);
+    deltaY += (averageDeltaX[frameNum-3+i][1] * gaussian[i]);
+  }
+
+  fprintf(stderr, "line 1341: gaussianDeltas.push_back(%f)\n", deltaX);
+  fprintf(stderr, "line 1342: gaussianDeltas.push_back(%f)\n", deltaY);
+
+  gaussianDeltas.push_back(deltaX);
+  gaussianDeltas.push_back(deltaY);
+
 }
 
-void R2Image::stabilization(R2Image* otherImage, double** stabilizationMatrix) {
+void R2Image::stabilization(int frameNum) {
 
 
   R2Image *copyImage = new R2Image(*this);
-    fprintf(stderr, "copy image created\n" );
+  fprintf(stderr, "copy image created\n" );
 
+  double** translationMatrix = dmatrix(1,3,1,3);
+
+  translationMatrix[1][1] = 1;
+  translationMatrix[2][2] = 1;
+  translationMatrix[3][3] = 1;
+  translationMatrix[1][2] = 0;
+  translationMatrix[2][1] = 0;
+  translationMatrix[3][1] = 0;
+  translationMatrix[3][2] = 0;
+  translationMatrix[1][3] = gaussianDeltas[2*frameNum];
+  translationMatrix[2][3] = gaussianDeltas[(2*frameNum) +1];
+
+  printf("line 1367: translationMatrix: \n%f %f %f\n %f %f %f\n %f %f %f\n", translationMatrix[1][1], translationMatrix[1][2], translationMatrix[1][3], translationMatrix[2][1], translationMatrix[2][2], translationMatrix[2][3], translationMatrix[3][1], translationMatrix[3][2], translationMatrix[3][3]);
 
   for (int i=0; i< width; i++) {
     for (int j=0; j<height; j++) {
-      double expectedEndZ = ((i)*(stabilizationMatrix[3][1])) + ((j)*(stabilizationMatrix[3][2])) + (stabilizationMatrix[3][3]);
+      double expectedEndZ = ((i)*(translationMatrix[3][1])) + ((j)*(translationMatrix[3][2])) + (translationMatrix[3][3]);
 
-      double expectedEndX = (((i)*(stabilizationMatrix[1][1])) + ((j)*(stabilizationMatrix[1][2])) + (stabilizationMatrix[1][3]))/expectedEndZ;
-      double expectedEndY = (((i)*(stabilizationMatrix[2][1])) + ((j)*(stabilizationMatrix[2][2])) + (stabilizationMatrix[2][3]))/expectedEndZ;
+      double expectedEndX = (((i)*(translationMatrix[1][1])) + ((j)*(translationMatrix[1][2])) + (translationMatrix[1][3]))/expectedEndZ;
+      double expectedEndY = (((i)*(translationMatrix[2][1])) + ((j)*(translationMatrix[2][2])) + (translationMatrix[2][3]))/expectedEndZ;
 
-      fprintf(stderr, "copyImage->Pixel(%f, %f) = this->Pixel(%d,%d);\n",expectedEndX, expectedEndY, i, j );
+      fprintf(stderr, "line 1376: copyImage->Pixel(%f, %f) = this->Pixel(%d,%d);\n",expectedEndX, expectedEndY, i, j );
 
       bool validPoint = expectedEndX > 0 && expectedEndY > 0 && expectedEndX < (width-1) && expectedEndY < (height-1);
       if (validPoint) {
